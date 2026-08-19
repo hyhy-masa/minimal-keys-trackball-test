@@ -167,9 +167,15 @@ jobs:
             fi
           done
 
+          # factory_reset_supported は「工場出荷リセットをこのリリースで実行して
+          # よいか」をアプリに伝える。settings_reset.uf2 が在ることと同義なので、
+          # 人が書くのではなく資産から導く。ここが欠けているとアプリは
+          # factory_reset_unavailable でリセットを拒否する（v1.0.0〜v1.0.4 で発生）。
           jq -s --arg version "$TAG" --argjson reset "$reset_flag" \
                 --arg released_at "$(date -u +%Y-%m-%d)" \
-            '{schema:2, version:$version, requires_settings_reset:$reset, assets:., released_at:$released_at}' \
+            '{schema:2, version:$version, requires_settings_reset:$reset,
+              factory_reset_supported: ([.[] | select(.role == "settings_reset")] | length == 1),
+              assets:., released_at:$released_at}' \
             assets.jsonl > ../manifest.json
 
           cat ../manifest.json
